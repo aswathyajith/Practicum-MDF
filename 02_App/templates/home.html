@@ -1,0 +1,38 @@
+{% extends 'layout.html' %}
+
+{% block head %}
+		<style>
+			.button {
+			    background-color: #4CAF50;
+			    border: none;
+			    color: white;
+			    padding: 15px 32px;
+			    text-align: center;
+			    text-decoration: none;
+			    display: inline-block;
+			    font-size: 16px;
+			    margin: 4px 2px;
+			    cursor: pointer;
+			    position: relative;
+			    left: 500px;
+			    border-radius: 5px;
+			}
+
+			.button:hover{
+				opacity: .8;
+			}
+		</style>				
+{% endblock %}
+
+
+{% block body %}
+<div class="jumbotron text-center">
+<h1>Welcome to YouVsML</h1>
+<p class="lead">This application is built on the Python Flask framework and enables users to tag materials dataset abstracts and compare against a machine learning model that uses fasttext for text classification. To begin playing, press Start.</p>
+</div>
+
+<form action="question.html" method=GET"">
+ 	<input type="submit" class="button" value="Start">
+</form>
+
+{% endblock %}
