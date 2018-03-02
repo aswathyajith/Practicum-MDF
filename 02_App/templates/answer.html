@@ -93,8 +93,16 @@
 <p align="center"><b>Your label(s): {{ your_tags }} </b></p>
 <p align="center"><b>Model Score(s): {{ model_score }} </b></p>
 <p align="center"><b>Your Score(s): {{ your_score }} </b></p>
+{% if done %}
+<form action="gameOver" method="GET">
+ 	<input type="submit" class="button" value="Get Results">
+</form>
+
+{% else %}
 <form action="question.html" method="GET">
  	<input type="submit" class="button" value="Next Question">
 </form>
 
+
+{% endif %}
 {% endblock %}

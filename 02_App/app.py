@@ -1,38 +1,53 @@
-from flask import Flask, render_template, request, make_response, session
+from flask import Flask, render_template, request, make_response, session, redirect, url_for
 import pandas as pd
 import uuid
 
 df = pd.read_csv("model_data.csv")[["Abstract", "Experiments", "pred_exp", "Simulations", "pred_sim", "Informatics", "pred_info"]]
 user_data = {'count' : -1, 'your_score' : 0.0, 'model_score' : 0.0}
 user_data_dict = {}
+restart = False
 
 app = Flask(__name__)
 app.secret_key = "\xe1\xcf\x05\xd5\xf4\x95H|\xab\x01'c*MOdD"
 @app.route('/')
 def index():
 	df.index = df.sample(frac=1).index
-	resp = make_response(render_template('home.html'))
 	user_id = uuid.uuid4()
-	resp.set_cookie('user_id', str(user_id))
 	session['user_id'] = user_id
-	user_data_dict[str(user_id)] = user_data.copy()
+	user_data_dict[str(user_id)] = user_data.copy() # adding the new user into dictionary
+	global restart
+
+	if restart == False:	
+		restart = True	
+		resp = make_response(render_template('home.html'))
+	
+	else:
+		resp = redirect(url_for('qstn'))
+
+	resp.set_cookie('user_id', str(user_id))
 	return resp
 
 @app.route('/question.html', methods=['GET', 'POST'])
-def qstn(df=df):
+def qstn():
+	print(user_data_dict)
 	user_id = request.cookies.get('user_id')
 	count = user_data_dict[user_id]['count']
 	count += 1
-	if (count <= len(df)):
+	if (count < 3):
 		resp = make_response(render_template('question.html', count=count, df=df))
 		user_data_dict[user_id]['count'] = count
+
+	else:
+		restart = True
+		resp = redirect(url_for('game_over'))
 	return resp
 
 @app.route('/answer.html', methods=['GET', 'POST'])
 def answer(df=df):
 	user_id = request.cookies.get('user_id')
-	count = user_data_dict[user_id]['count']
+	count = user_data_dict[user_id]['count']   #count holds no.of qstns answered before the current question already
 	your_tags = request.args.getlist('label')
+
 	yourtag_string = ""
 	if (your_tags != []):
 		yourtag_string = your_tags[0]
@@ -87,10 +102,28 @@ def answer(df=df):
 	model_score_str = str(model_score) + "%"
 	user_data_dict[user_id]['model_score'] = model_score
 	
-	resp = make_response(render_template('answer.html', df=df, your_tags=yourtag_string, correct_tags=correcttag_string, model_tags=modeltags_string, your_score=your_score_str, model_score=model_score_str))	
-	print(user_data_dict)		
+	if ((count + 1) >= 3):
+		resp = make_response(render_template('answer.html', df=df, your_tags=yourtag_string, correct_tags=correcttag_string, model_tags=modeltags_string, your_score=your_score_str, model_score=model_score_str, done = True))			
+
+	else:
+		resp = make_response(render_template('answer.html', df=df, your_tags=yourtag_string, correct_tags=correcttag_string, model_tags=modeltags_string, your_score=your_score_str, model_score=model_score_str, done = False))			
 	return resp
 
+@app.route('/gameOver')
+def game_over():
+	user_id = request.cookies.get('user_id')
+	your_score = user_data_dict[user_id]['your_score']
+	model_score = user_data_dict[user_id]['model_score']
+	ml_won = 2 #tells who won; 0 if you, 1 if model, 2 if tie
+	if (your_score > model_score):
+		ml_won = 0
+
+	elif (your_score < model_score):
+		del user_data_dict[user_id]
+		ml_won = 1
+
+	resp = make_response(render_template('game_over.html', ml_won = ml_won))
+	return resp
 
 if __name__ == "__main__":
 	app.run(debug=True)
