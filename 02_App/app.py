@@ -7,16 +7,15 @@ import os
 
 user_data_dict = {}
 total_players = 0
-restart = False
 db = DynamoDB() #connect to db
 # df = pd.read_csv("model2.csv")[['qstn_id', "Abstract", "exp_label", "pred_exp", "sim_label", "pred_sim", "info_label", "pred_info"]]
 # df = df.set_index('qstn_id')
 df = db.extract_abstracts()
 app = Flask(__name__)
 app.secret_key = "\xe1\xcf\x05\xd5\xf4\x95H|\xab\x01'c*MOdD"
+@app.route('/<restart>')
 @app.route('/')
-def index():
-	global restart
+def index(restart='False'):
 	global total_players
 	global df
 
@@ -29,9 +28,9 @@ def index():
 	session['user_id'] = user_id
 	user_data_dict[str(user_id)] = copy.deepcopy(user_data) # adding the new user into dictionary
 
-	if restart == False:	
+	if restart == 'False':	
 
-		restart = True	
+		restart = 'True'	
 		resp = make_response(render_template('home.html'))
 	
 	else:
