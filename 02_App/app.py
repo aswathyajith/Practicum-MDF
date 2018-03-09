@@ -13,13 +13,14 @@ db = DynamoDB() #connect to db
 df = db.extract_abstracts()
 app = Flask(__name__)
 app.secret_key = "\xe1\xcf\x05\xd5\xf4\x95H|\xab\x01'c*MOdD"
-@app.route('/<restart>')
+@app.route('/<int:restart>')
 @app.route('/')
-def index(restart='False'):
+def index(restart=0):
 	global total_players
 	global df
 
-	if restart == True:
+	if restart == 1:
+		print("getting extracts")
 		df = db.extract_abstracts()
 
 	user_data = {'total_players' : total_players, 'count' : -1, 'your_score' : 0.0, 'model_score' : 0.0, 'answers' : dict.fromkeys(list(df.index.values))}
@@ -28,17 +29,17 @@ def index(restart='False'):
 	session['user_id'] = user_id
 	user_data_dict[str(user_id)] = copy.deepcopy(user_data) # adding the new user into dictionary
 
-	if restart == 'False':	
-
-		restart = 'True'	
+	if restart == 0:	
+		restart = 1	
 		resp = make_response(render_template('home.html'))
 	
-	else:
+	elif (restart == 1):
 		resp = redirect(url_for('qstn'))
 
+	print(user_data_dict)
 	resp.set_cookie('user_id', str(user_id))
 	total_players += 1
-	print(user_data_dict)
+	# print(user_data_dict)
 	return resp
 
 @app.route('/question.html', methods=['GET', 'POST'])
@@ -52,7 +53,6 @@ def qstn():
 		user_data_dict[user_id]['count'] = count
 
 	else:
-		restart = True
 		resp = redirect(url_for('game_over'))
 	return resp
 
@@ -76,7 +76,7 @@ def answer():
 	# 	correct_tags.append("Simulation")
 	# if df.Informatics[count]==1:
 	# 	correct_tags.append("Informatics")
-	print(df.index.values)
+	# print(df.index.values)
 
 	if df.exp_label[count]=='1':
 		correct_tags.append("Experiment")
@@ -146,11 +146,12 @@ def game_over():
 		ml_won = 0
 
 	elif (your_score < model_score):
-		del user_data_dict[user_id]			# deleting record of user with lesser scores
 		ml_won = 1
 
 	resp = make_response(render_template('game_over.html', ml_won = ml_won))
+	del user_data_dict[user_id]			# deleting from dictionary once stored in db
+	
 	return resp
 
 if __name__ == "__main__":
-	app.run(debug=True, host='0.0.0.0')
+	app.run(debug=True)
